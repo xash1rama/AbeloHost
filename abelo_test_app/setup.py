@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
                     email=fake.unique.email(),
                     date_registration=datetime.now()
                     - timedelta(
-                        days=random.randint(0, 365), hours=random.randint(0, 23)
+                        days=random.randint(0, 730), hours=random.randint(0, 23)
                     ),
                 )
                 users.append(new_user)
@@ -50,11 +50,11 @@ async def lifespan(app: FastAPI):
                 for _ in range(1000):
                     new_transaction = Transaction(
                         status=random.choice(["successful", "failed"]),
-                        payments_amount=random.randint(100, 10000),
+                        payments_amount=random.randint(1, 1000),
                         type=random.choice(["payment", "invoice"]),
                         date_payment=datetime.now()
                         - timedelta(
-                            days=random.randint(0, 365),
+                            days=random.randint(0, 730),
                             hours=random.randint(0, 23),
                         ),
                         user_id=random.choice(user_ids),
