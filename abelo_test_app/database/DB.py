@@ -28,6 +28,7 @@ async def get_db():
 class Base(DeclarativeBase):
     pass
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -47,5 +48,7 @@ class Transaction(Base):
     payment_amount: Mapped[int] = mapped_column(nullable=False)
     type: Mapped[str] = mapped_column(nullable=False)
     date_payment: Mapped[datetime] = mapped_column(server_default=func.now())
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), ondelete="CASCADE", nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), ondelete="CASCADE", nullable=False
+    )
     user: Mapped["User"] = relationship(back_populates="transactions")

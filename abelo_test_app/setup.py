@@ -42,7 +42,9 @@ async def lifespan(app: FastAPI):
             await session.flush()
 
             user_ids = [usr.id for usr in users]
-            logger.info(f"Successfully created 100 users. Starting transactions generation...")
+            logger.info(
+                f"Successfully created 100 users. Starting transactions generation..."
+            )
 
             for idx in range(10):
                 new_transactions = []
@@ -59,7 +61,6 @@ async def lifespan(app: FastAPI):
                         user_id=random.choice(user_ids),
                     )
                     new_transactions.append(new_transaction)
-
 
                 session.add_all(new_transactions)
                 await session.commit()
