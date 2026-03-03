@@ -5,9 +5,15 @@ from typing import Optional
 
 from abelo_test_app.database.DB import Transaction, get_db, AsyncSession
 from abelo_test_app.schemas.schemas import ReportResponse
+import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
 
-router_report = APIRouter(tags=["Routers"])
+router_report = APIRouter(tags=["Report"])
 
 router_report.get("/report", response_model=ReportResponse)
 async def get_transaction_report(
@@ -21,10 +27,12 @@ async def get_transaction_report(
         include_daily_shift: bool = False,
         db: AsyncSession = Depends(get_db)
 ):
+    logger.info("Start analyze. /report")
+
     end_dt = datetime.strptime(end_date, "%Y-%m-%d") if end_date else datetime.now()
     start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else end_dt - timedelta(days=30)
 
-    filters = [Transaction.date_pay.between(start_dt, end_dt)]
+    filters = [Transaction.date_payment.between(start_dt, end_dt)]
 
     if status != "all":
         filters.append(Transaction.status == status)
@@ -48,10 +56,11 @@ async def get_transaction_report(
         "min_amount": stats.min if include_min else None,
         "max_amount": stats.max if include_max else None,
     }
+    logger.info("Finish generate answer for math amount and start generate daily data...")
 
     if include_daily_shift:
         daily_query = select(
-            cast(Transaction.date_pay, Date).label("day"),
+            cast(Transaction.date_payment, Date).label("day"),
             func.sum(Transaction.payment_amount).label("day_total")
         ).where(and_(*filters)).group_by("day").order_by("day")
 
@@ -75,4 +84,5 @@ async def get_transaction_report(
 
         report["daily_shift"] = daily_data
 
+    logger.info("Return report analyze.")
     return report

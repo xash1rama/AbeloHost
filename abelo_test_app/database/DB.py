@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from sqlalchemy import func, ForeignKey
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import declarative_base, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from dotenv import load_dotenv
 
 load_dotenv("../.env")
@@ -25,8 +25,8 @@ async def get_db():
         yield session
 
 
-Base = declarative_base()
-
+class Base(DeclarativeBase):
+    pass
 
 class User(Base):
     __tablename__ = "users"
@@ -47,5 +47,5 @@ class Transaction(Base):
     payment_amount: Mapped[int] = mapped_column(nullable=False)
     type: Mapped[str] = mapped_column(nullable=False)
     date_payment: Mapped[datetime] = mapped_column(server_default=func.now())
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), ondelete="CASCADE", nullable=False)
     user: Mapped["User"] = relationship(back_populates="transactions")

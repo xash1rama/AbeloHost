@@ -7,7 +7,6 @@ from fastapi import FastAPI
 from database.DB import get_db, User, Transaction
 import logging
 
-# Настройка формата вывода
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",

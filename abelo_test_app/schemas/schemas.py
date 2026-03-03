@@ -11,3 +11,13 @@ class ReportResponse(BaseModel):
     min_amount: None|int
     max_amount: None|int
     daily_shift: None|list[DailyMetric]
+
+
+class CountryReportRecord(BaseModel):
+    country: str
+    count: int
+    total: int
+    avg: float
+
+    class Config:
+        from_attributes = True
