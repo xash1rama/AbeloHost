@@ -27,6 +27,7 @@ async def get_db():
 
 Base = declarative_base()
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -42,9 +43,9 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    status: Mapped[bool] = mapped_column(nullable=False)
+    status: Mapped[str] = mapped_column(nullable=False)
+    payment_amount: Mapped[int] = mapped_column(nullable=False)
     type: Mapped[str] = mapped_column(nullable=False)
+    date_payment: Mapped[datetime] = mapped_column(server_default=func.now())
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    date_registration: Mapped[datetime] = mapped_column(server_default=func.now())
     user: Mapped["User"] = relationship(back_populates="transactions")
-
