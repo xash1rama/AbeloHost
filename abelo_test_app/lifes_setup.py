@@ -1,11 +1,14 @@
+import asyncio
 import random
 from datetime import datetime, timedelta
 from faker import Faker
 from sqlalchemy import select, func
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from database.DB import get_db, User, Transaction
+from database.DB import get_db, User, Transaction, engine, Base
 import logging
+from time import time
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,6 +21,21 @@ fake = Faker()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    connected = False
+    for i in range(20):
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(select(1))
+                await conn.run_sync(Base.metadata.create_all)
+            connected = True
+            break
+        except Exception: ##ДАДА я знаю)
+            logger.warning(f"⏳ DB loading... (try {i+1}/20)...")
+            await asyncio.sleep(2)
+
+    if not connected:
+        return
+
     async for session in get_db():
         logger.info("Checking database for existing test data...")
         examination = await session.execute(select(func.count(User.id)))
@@ -51,7 +69,7 @@ async def lifespan(app: FastAPI):
                 for _ in range(1000):
                     new_transaction = Transaction(
                         status=random.choice(["successful", "failed"]),
-                        payments_amount=random.randint(1, 1000),
+                        payment_amount=random.randint(1, 1000),
                         type=random.choice(["payment", "invoice"]),
                         date_payment=datetime.now()
                         - timedelta(

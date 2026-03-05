@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 
-from setup import lifespan
+from lifes_setup import lifespan
 from routers.router_report_by_country import router_report_by_country
 from routers.routers_report import router_report
 import logging
@@ -22,7 +22,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8000", "127.0.0.1:8000",],
-    allow_credentionals=True,
+    allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type","Set-Cookie", "Authorization", "Access-Control-Allow-Origin"]
 )

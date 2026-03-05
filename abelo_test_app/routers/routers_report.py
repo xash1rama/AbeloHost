@@ -3,40 +3,38 @@ from sqlalchemy import and_, func, select, cast, Date
 from datetime import datetime, timedelta
 from typing import Optional
 
-from abelo_test_app.database.DB import Transaction, get_db, AsyncSession
-from abelo_test_app.schemas.schemas import ReportResponse
+from database.DB import Transaction, get_db, AsyncSession
+from schemas.schemas import ReportResponse
 import logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
+
 logger = logging.getLogger(__name__)
 
 router_report = APIRouter(tags=["Report"])
 
-router_report.get("/report", response_model=ReportResponse)
-
-
+@router_report.get("/report", response_model=ReportResponse)
 async def get_transaction_report(
-    start_date: Optional[str] = Query(None),
-    end_date: Optional[str] = Query(None),
-    status: str = Query("all"),
-    type: str = Query("all"),
-    include_avg: bool = False,
-    include_min: bool = False,
-    include_max: bool = False,
-    include_daily_shift: bool = False,
-    db: AsyncSession = Depends(get_db),
+        start_date: Optional[str] = Query(None, description="Format: YYYY-MM-DD"),
+        end_date: Optional[str] = Query(None, description="Format: YYYY-MM-DD"),
+        status: str = Query("all", enum=["all", "successful", "failed"]),
+        type: str = Query("all", enum=["all", "payment", "invoice"]),
+        include_avg: bool = False,
+        include_min: bool = False,
+        include_max: bool = False,
+        include_daily_shift: bool = False,
+        db: AsyncSession = Depends(get_db),
 ):
     logger.info("Start analyze. /report")
 
-    end_dt = datetime.strptime(end_date, "%Y-%m-%d") if end_date else datetime.now()
-    start_dt = (
-        datetime.strptime(start_date, "%Y-%m-%d")
-        if start_date
-        else end_dt - timedelta(days=30)
-    )
+    try:
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d") if end_date else datetime.now()
+        start_dt = (
+            datetime.strptime(start_date, "%Y-%m-%d")
+            if start_date
+            else end_dt - timedelta(days=30)
+        )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
 
     filters = [Transaction.date_payment.between(start_dt, end_dt)]
 
@@ -53,20 +51,18 @@ async def get_transaction_report(
         func.avg(Transaction.payment_amount).label("avg"),
         func.min(Transaction.payment_amount).label("min"),
         func.max(Transaction.payment_amount).label("max"),
-    ).where(and_(*filters))
+        ).where(and_(*filters))
 
     result = await db.execute(metrics_query)
     stats = result.one()
 
     report = {
-        "total_amount": stats.total or 0,
+        "total_amount": int(stats.total) if stats.total else 0,
         "avg_amount": float(stats.avg) if include_avg and stats.avg else None,
-        "min_amount": stats.min if include_min else None,
-        "max_amount": stats.max if include_max else None,
+        "min_amount": int(stats.min) if include_min and stats.min else None,
+        "max_amount": int(stats.max) if include_max and stats.max else None,
+        "daily_shift": None
     }
-    logger.info(
-        "Finish generate answer for math amount and start generate daily data..."
-    )
 
     if include_daily_shift:
         daily_query = (
@@ -93,8 +89,8 @@ async def get_transaction_report(
             daily_data.append(
                 {
                     "date": str(row.day),
-                    "total": row.day_total,
-                    "change_percent": f"{change}%" if change else None,
+                    "total": int(row.day_total),
+                    "change_percent": change if change is not None else None,
                 }
             )
             prev_total = row.day_total

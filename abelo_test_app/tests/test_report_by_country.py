@@ -3,7 +3,6 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_get_report_by_country(aclient):
-    # Проверяем сортировку и лимит
     response = await aclient.get("/report/by-country", params={
         "sort_by": "total",
         "top_n": 5
